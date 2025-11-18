@@ -1,63 +1,48 @@
 library(dplyr)
 library(ggplot2)
-library(caret)
-library(car)
-library(pROC)
-library(corrplot)
+library(zoo)
 
-data("starwars")
+data("mpg")
 
-starwars <- starwars %>% 
-  filter(!is.na(height), !is.na(mass), !is.na(birth_year))
+mpg_filtered <- mpg %>%
+  select(manufacturer, model, cyl, displ, hwy, cty, year) %>%
+  filter(hwy > 20, cyl >= 4) %>%
+  arrange(desc(hwy))
 
-head(starwars)
-sum(is.na(starwars))
-summary(starwars)
+head(mpg_filtered)
 
-boxplot(starwars$height)
+mpg_summary <- mpg %>%
+  group_by(manufacturer) %>%
+  summarize(
+    avg_hwy = mean(hwy, na.rm = TRUE),
+    avg_cty = mean(cty, na.rm = TRUE),
+    count = n()
+  ) %>%
+  arrange(desc(count))
 
-numeric_sw <- starwars %>% select(where(is.numeric))
-cor_sw <- cor(numeric_sw)
-corrplot(cor_sw, method = "circle")
+head(mpg_summary)
 
-simple_model <- lm(height ~ mass, data = starwars)
-summary(simple_model)
+mpg_classified <- mpg %>%
+  mutate(fuel_efficiency = ifelse(hwy > 25, "High", "Low"))
 
-multiple_model <- lm(height ~ mass * birth_year, data = starwars)
-summary(multiple_model)
+head(mpg_classified)
 
-adjusted_R2 <- summary(multiple_model)$adj.r.squared
-AIC_value <- AIC(multiple_model)
-BIC_value <- BIC(multiple_model)
+df1 <- mpg %>% select(manufacturer, model, hwy)
+df2 <- mpg %>% select(model, cyl)
 
-cat("Adjusted R^2:", adjusted_R2, "\n")
-cat("AIC:", AIC_value, "\n")
-cat("BIC:", BIC_value, "\n")
+inner_join_df <- inner_join(df1, df2, by = "model")
+left_join_df  <- left_join(df1, df2, by = "model")
 
-plot(multiple_model, which = 1)
-plot(multiple_model, which = 2)
+head(inner_join_df)
+head(left_join_df)
 
-set.seed(123)
-train_control <- trainControl(method = "cv", number = 10)
+mpg_roll <- mpg %>%
+  group_by(manufacturer) %>%
+  summarize(avg_hwy = mean(hwy, na.rm = TRUE)) %>%
+  arrange(manufacturer) %>%
+  mutate(
+    rolling_avg = rollmean(avg_hwy, k = 3, fill = NA, align = "right"),
+    cumulative_sum = cumsum(avg_hwy)
+  )
 
-cv_model <- train(
-  height ~ mass * birth_year,
-  data = starwars,
-  method = "lm",
-  trControl = train_control
-)
-print(cv_model)
-
-starwars$height_class <- ifelse(starwars$height >= median(starwars$height), 1, 0)
-
-logistic_model <- glm(height_class ~ mass * birth_year,
-                      data = starwars,
-                      family = "binomial")
-summary(logistic_model)
-
-pred_probs <- predict(logistic_model, type = "response")
-roc_curve <- roc(starwars$height_class, pred_probs)
-
-plot(roc_curve, col = "blue")
-abline(a = 0, b = 1, lty = 2, col = "red")
-cat("AUC:", auc(roc_curve), "\n")
+head(mpg_roll)
