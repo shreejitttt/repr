@@ -1,50 +1,75 @@
-is_valid_triangle <- function(a, b, c) {
-  return((a + b > c) & (b + c > a) & (a + c > b))
-}
+import numpy as np
 
-triangle_type <- function(a, b, c) {
-  if (a == b && b == c) {
-    return("Equilateral")
-  } else if (a == b || b == c || a == c) {
-    return("Isosceles")
-  } else {
-    return("Scalene")
-  }
-}
+# Sigmoid activation
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
 
-triangle_area <- function(a, b, c) {
-  s <- (a + b + c) / 2
-  area <- sqrt(s * (s - a) * (s - b) * (s - c))
-  return(area)
-}
+# Derivative of sigmoid
+def sigmoid_derivative(x):
+    return x * (1 - x)
 
-validate_input <- function(x) {
-  if (!is.numeric(x) || x <= 0) {
-    stop("Error: Input must be a positive number.")
-  }
-  return(TRUE)
-}
 
-cat("Enter the lengths of the sides of the triangle:\n")
-a <- as.numeric(readline(prompt = "Side a: "))
-b <- as.numeric(readline(prompt = "Side b: "))
-c <- as.numeric(readline(prompt = "Side c: "))
+# ----------------------------
+# Input and Output for XOR
+# ----------------------------
+input_data = np.array([
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1]
+])
 
-tryCatch({
-  validate_input(a)
-  validate_input(b)
-  validate_input(c)
+expected_output = np.array([[0], [1], [1], [0]])
 
-  if (!is_valid_triangle(a, b, c)) {
-    stop("Error: The given sides do not form a valid triangle.")
-  }
 
-  type_of_triangle <- triangle_type(a, b, c)
-  cat("The triangle is:", type_of_triangle, "\n")
+# ----------------------------
+# Initialize weights and biases
+# ----------------------------
+input_neurons = 2
+hidden_neurons = 2
+output_neurons = 1
 
-  area_of_triangle <- triangle_area(a, b, c)
-  cat("The area of the triangle is:", area_of_triangle, "\n")
+hidden_weights = np.random.uniform(size=(input_neurons, hidden_neurons))
+output_weights = np.random.uniform(size=(hidden_neurons, output_neurons))
 
-}, error = function(e) {
-  cat(e$message, "\n")
-})
+hidden_bias = np.random.uniform(size=(1, hidden_neurons))
+output_bias = np.random.uniform(size=(1, output_neurons))
+
+lr = 0.1
+epochs = 10000
+
+
+# ----------------------------
+# Training (Backpropagation)
+# ----------------------------
+for i in range(epochs):
+
+    # Forward propagation
+    hidden_layer_activation = np.dot(input_data, hidden_weights) + hidden_bias
+    hidden_layer_output = sigmoid(hidden_layer_activation)
+
+    output_layer_activation = np.dot(hidden_layer_output, output_weights) + output_bias
+    predicted_output = sigmoid(output_layer_activation)
+
+    # Backpropagation
+    error = expected_output - predicted_output
+
+    d_predicted_output = error * sigmoid_derivative(predicted_output)
+
+    error_hidden_layer = d_predicted_output.dot(output_weights.T)
+    d_hidden_layer = error_hidden_layer * sigmoid_derivative(hidden_layer_output)
+
+    # Update weights and biases
+    output_weights += hidden_layer_output.T.dot(d_predicted_output) * lr
+    output_bias += np.sum(d_predicted_output, axis=0, keepdims=True) * lr
+
+    hidden_weights += input_data.T.dot(d_hidden_layer) * lr
+    hidden_bias += np.sum(d_hidden_layer, axis=0, keepdims=True) * lr
+
+
+# ----------------------------
+# Final Predicted Output
+# ----------------------------
+print("\nPREDICTED OUTPUT:")
+print(predicted_output)
+
