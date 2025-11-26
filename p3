@@ -1,42 +1,42 @@
+import numpy as np
 import tensorflow as tf
-from tensorflow.keras import models,layers
-from tensorflow.keras.datasets import mnist
+from tensorflow.keras import models,layers,optimizers
 import matplotlib.pyplot as plt
-(train_images,train_labels),(test_images,test_labels) = mnist.load_data()
+def create_data():
+    x = np.random.randn(1000,10)
+    y = np.random.randn(1000,1)
+    return x,y
+def create_model():
+    model = models.Sequential([
+        layers.Dense(50,activation="relu",input_shape=(10,)),
+        layers.Dense(10,activation="relu"),
+        layers.Dense(1)
+    ])
+    return model
+def model_training(model,optimizer,epochs,batch_size,x,y,optimizer_name):
+    model.compile(optimizer=optimizer,loss="mean_squared_error",metrics=["accuracy"])
+    history = []
+    for epoch in range(epochs):
+        hist = model.fit(x,y,epochs=1,batch_size=batch_size)
+        loss = hist.history["loss"][0]
+        history.append(loss)
+        print(f"For {epoch+1}/{epochs} for {optimizer_name} loss is : {loss*100}%")
+    return history
+x,y = create_data()
+sgd_optimizer = optimizers.SGD(learning_rate=0.01)
+adam_optimizer = optimizers.Adam(learning_rate=0.01)
+sgd_model = create_model()
+adam_model = create_model()
+epochs = 50
+batch_size = 32
+sgd_loss = model_training(sgd_model,sgd_optimizer,epochs,batch_size,x,y,"SGD")
+adam_loss = model_training(adam_model,adam_optimizer,epochs,batch_size,x,y,"Adam")
 
-train_images = train_images.reshape((-1,28,28,1))
-test_images = test_images.reshape((-1,28,28,1))
-
-train_images = train_images/255.0
-test_images = test_images/255.0
-model = models.Sequential([
-    layers.Conv2D(32,(3,3),activation="relu",input_shape=(28,28,1)),
-    layers.MaxPooling2D((2,2)),
-    layers.Conv2D(64,(3,3),activation="relu"),
-    layers.Flatten(),
-    layers.Dense(64,activation="relu"),
-    layers.Dense(10,activation="softmax")
-])
-model.compile(loss="sparse_categorical_crossentropy",optimizer="adam",metrics=["accuracy"])
-history = model.fit(train_images,train_labels,epochs=5,validation_data=(test_images,test_labels))
-test_loss,test_acc = model.evaluate(test_images,test_labels)
-print(f"Test Accuracy : {test_acc*100}%")
-plt.figure(figsize=(10,6))
-plt.subplot(1,2,1)
-plt.plot(history.history["accuracy"],label="Training Accuracy")
-plt.plot(history.history["val_accuracy"],label="Validation Accuracy")
-plt.xlabel("Epochs")
-plt.ylabel("Accuracy")
-plt.title("Training v/s Validation Accuracy")
-plt.legend(loc="lower right")
-plt.grid(True,alpha=0.75)
-
-
-plt.subplot(1,2,2)
-plt.plot(history.history["loss"],label="Training Loss")
-plt.plot(history.history["val_loss"],label="Validation Loss")
+plt.plot(range(1,epochs+1),sgd_loss,label="SGD")
+plt.plot(range(1,epochs+1),adam_loss,label="Adam")
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
-plt.title("Training v/s Validation Loss")
+plt.title("SGD v/s Adam Loss")
 plt.legend(loc="upper right")
 plt.grid(True,alpha=0.75)
+plt.show()
