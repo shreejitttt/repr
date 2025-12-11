@@ -1,40 +1,50 @@
-import numpy as np
+is_valid_triangle <- function(a, b, c) {
+  return((a + b > c) & (b + c > a) & (a + c > b))
+}
 
-def sigmoid(x):
-    return 1/(1+np.exp(-x))
-def sigmoid_derivative(x):
-    return x*(1-x)
-inputs = np.array([[0,0],[0,1],[1,0],[1,1]])
-outputs = np.array([[0],[1],[1],[0]])
+triangle_type <- function(a, b, c) {
+  if (a == b && b == c) {
+    return("Equilateral")
+  } else if (a == b || b == c || a == c) {
+    return("Isosceles")
+  } else {
+    return("Scalene")
+  }
+}
 
+triangle_area <- function(a, b, c) {
+  s <- (a + b + c) / 2
+  area <- sqrt(s * (s - a) * (s - b) * (s - c))
+  return(area)
+}
 
-np.random.seed(42)
+validate_input <- function(x) {
+  if (!is.numeric(x) || x <= 0) {
+    stop("Error: Input must be a positive number.")
+  }
+  return(TRUE)
+}
 
-ipLayerNeurons,hiddenLayerNeurons,opLayerNeurons = 2,2,1
+cat("Enter the lengths of the sides of the triangle:\n")
+a <- as.numeric(readline(prompt = "Side a: "))
+b <- as.numeric(readline(prompt = "Side b: "))
+c <- as.numeric(readline(prompt = "Side c: "))
 
-hidden_weights = np.random.uniform(size=(ipLayerNeurons,hiddenLayerNeurons))
-hidden_bias = np.random.uniform(size=(1,hiddenLayerNeurons))
-output_weights = np.random.uniform(size=(hiddenLayerNeurons,opLayerNeurons))
-output_bias = np.random.uniform(size=(1,opLayerNeurons))
-epochs=10000
-lr = 0.1
+tryCatch({
+  validate_input(a)
+  validate_input(b)
+  validate_input(c)
 
-for _ in range(epochs):
-    hidden_layer_activation = np.dot(inputs,hidden_weights)+hidden_bias
-    hidden_layer_output = sigmoid(hidden_layer_activation)
-    output_layer_activation = np.dot(hidden_layer_output,output_weights)+output_bias
-    predicted_output = sigmoid(output_layer_activation)
+  if (!is_valid_triangle(a, b, c)) {
+    stop("Error: The given sides do not form a valid triangle.")
+  }
 
-    error = outputs-predicted_output
+  type_of_triangle <- triangle_type(a, b, c)
+  cat("The triangle is:", type_of_triangle, "\n")
 
-    d_predicted_output = error*sigmoid_derivative(predicted_output)
-    error_hidden_layer = d_predicted_output.dot(output_weights.T)
-    d_hidden_layer = error_hidden_layer*sigmoid_derivative(hidden_layer_output)
+  area_of_triangle <- triangle_area(a, b, c)
+  cat("The area of the triangle is:", area_of_triangle, "\n")
 
-    output_weights += hidden_layer_output.T.dot(d_predicted_output)*lr
-    output_bias += np.sum(d_predicted_output,axis=0,keepdims=True)*lr
-    hidden_weights += inputs.T.dot(d_hidden_layer)*lr
-    hidden_bias += np.sum(d_hidden_layer,axis=0,keepdims=True)*lr
-
-print("Predictions : ")
-print(predicted_output)
+}, error = function(e) {
+  cat(e$message, "\n")
+})
